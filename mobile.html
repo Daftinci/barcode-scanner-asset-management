@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+<title>Phone Scanner</title>
+<link rel="stylesheet" href="css/mobile.css" />
+</head>
+<body>
+<div id="mobile-root">
+  <video id="mobile-video" autoplay muted playsinline></video>
+
+  <div class="mobile-topbar">
+    <div id="mobile-session" class="mobile-session">Connecting to PC…</div>
+    <button id="mobile-torch-btn" class="mobile-icon-btn hidden" aria-label="Toggle flashlight">&#128294;</button>
+  </div>
+
+  <div class="viewfinder hidden" id="mobile-viewfinder">
+    <span class="corner tl"></span>
+    <span class="corner tr"></span>
+    <span class="corner bl"></span>
+    <span class="corner br"></span>
+    <div class="scan-line"></div>
+  </div>
+
+  <div class="mobile-bottombar">
+    <div id="mobile-toast" class="mobile-toast"></div>
+    <button id="mobile-start-btn" class="mobile-start-btn">Tap to start scanning</button>
+  </div>
+</div>
+
+<script src="vendor/zxing/zxing.min.js"></script>
+<script type="module" src="js/mobile.js"></script>
+</body>
+</html>

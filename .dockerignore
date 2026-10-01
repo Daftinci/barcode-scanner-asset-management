@@ -1,0 +1,7 @@
+node_modules
+__pycache__
+*.pyc
+.git
+.server.log
+cert.pem
+key.pem

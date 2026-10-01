@@ -1,0 +1,26 @@
+services:
+  scanner:
+    build: .
+    image: ip-phone-scanner:latest
+    # Published on all interfaces: reached both through nginx's reverse proxy (below) and
+    # directly at <server-ip>:8000 for devices already on the server's own subnet. If nginx
+    # itself runs in its own separate container (common), reach this one via
+    # host.docker.internal rather than 127.0.0.1 — see DEPLOYMENT.md's "reverse proxy also
+    # containerized" note.
+    ports:
+      - "8000:8000"
+    environment:
+      # Reverse-proxy mode (example) — the app is fronted by nginx at this exact public
+      # URL/path, reusing nginx's existing certificate. Leaving PUBLIC_HOST/TLS_CERT/TLS_KEY
+      # unset keeps this container plain HTTP internally — nginx is what terminates HTTPS.
+      # No trailing slash — app.js appends "/mobile.html" directly onto this. Replace with
+      # your own host/path, or comment out and use PUBLIC_HOST below instead (see DEPLOYMENT.md).
+      - PUBLIC_URL=https://existing-host.example.com/scanner
+
+      # Direct-access mode (no reverse proxy) — set this INSTEAD of PUBLIC_URL if phones/PCs
+      # should reach the container's own IP:port directly rather than through nginx. Set to
+      # this server's real LAN IP or a resolvable hostname (not localhost, not the container's
+      # own address). A self-signed HTTPS cert is then auto-generated for it at startup (see
+      # server.py's module docstring) since iOS Safari requires HTTPS for camera access.
+      # - PUBLIC_HOST=192.168.1.50
+    restart: unless-stopped

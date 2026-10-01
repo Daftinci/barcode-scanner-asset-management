@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IP Phone / Network Equipment Barcode Scanner</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<header class="topbar">
+  <h1>IP Phone / Network Equipment Barcode Scanner</h1>
+  <p class="subtitle">Scan a device's SN barcode (hardware scanner or phone camera via DroidCam) to check it off the master list.</p>
+</header>
+
+<div id="resume-banner" class="banner banner--info hidden">
+  <span id="resume-banner-text"></span>
+  <button id="resume-dismiss-btn" class="btn btn--small">Dismiss</button>
+</div>
+
+<div id="camera-error-banner" class="banner banner--error hidden">
+  <span id="camera-error-text"></span>
+  <button id="camera-error-dismiss-btn" class="btn btn--small">Dismiss</button>
+</div>
+
+<main>
+  <section class="panel" id="load-panel">
+    <h2>1. Load Workbook</h2>
+    <div class="load-row">
+      <input type="file" id="file-input" accept=".xlsx,.xls" />
+      <input type="text" id="client-name-input" placeholder="Client / session name (e.g. ENI, Acme Corp)" />
+      <button id="intake-start-btn" class="btn">Start New Product Intake</button>
+    </div>
+    <p class="muted">No workbook to check off? Type a session name above and click "Start New
+      Product Intake" to scan brand-new products from scratch instead.</p>
+    <div id="file-info" class="muted"></div>
+  </section>
+
+  <section class="panel" id="sheet-panel">
+    <h2>2. Client Progress</h2>
+    <div id="client-name-display" class="client-name-display">No client loaded</div>
+    <div class="stats-row">
+      <div class="stat"><span id="stat-total">0</span><label>Total</label></div>
+      <div class="stat stat--found"><span id="stat-found">0</span><label>Found</label></div>
+      <div class="stat stat--remaining"><span id="stat-remaining">0</span><label>Remaining</label></div>
+    </div>
+    <div class="progress-bar"><div id="progress-bar-fill" class="progress-bar__fill"></div></div>
+  </section>
+
+  <section class="panel" id="scan-panel">
+    <h2>3. Scan</h2>
+
+    <div class="scan-input-row">
+      <label for="scanner-input">Scanner input (hardware scanner types here automatically)</label>
+      <input type="text" id="scanner-input" autocomplete="off" placeholder="Ready — scan a barcode..." disabled />
+      <span id="scanner-ready-dot" class="ready-dot"></span>
+    </div>
+
+    <details class="remote-panel" open>
+      <summary>Remote phone scanner (recommended)</summary>
+      <p class="muted">Open this address in your phone's browser (same Wi-Fi as this PC) for a
+        full-screen camera scanner with a viewfinder — decoded barcodes appear here
+        automatically, no cable or DroidCam needed.</p>
+      <div class="remote-url-row">
+        <code id="remote-url">Checking for relay server…</code>
+        <button id="remote-copy-btn" class="btn btn--small hidden">Copy</button>
+      </div>
+      <div id="remote-status" class="muted"></div>
+    </details>
+
+    <details class="camera-panel">
+      <summary>Local webcam (DroidCam / USB) — optional fallback</summary>
+      <div class="camera-controls">
+        <select id="camera-device-select"></select>
+        <button id="camera-refresh-btn" class="btn btn--small">Refresh devices</button>
+        <button id="camera-start-btn" class="btn">Start Camera</button>
+        <button id="camera-stop-btn" class="btn hidden">Stop Camera</button>
+      </div>
+      <video id="camera-video" autoplay muted playsinline></video>
+      <div id="camera-scan-status" class="muted"></div>
+      <p class="muted">If the video shows but nothing ever gets found: the decoder needs a
+        sharp, well-lit, close-up frame of the barcode. In the DroidCam Windows client, raise
+        the resolution/quality slider; hold the barcode ~15-20cm from the lens, fill as much of
+        the frame as possible, and avoid glare. The status line above should keep updating its
+        timestamp while the camera is running — if it freezes, the video feed itself stalled
+        (a DroidCam connection issue), not the barcode decoding.</p>
+    </details>
+
+    <details class="hotkey-panel" open>
+      <summary>Condition tags — press Alt+number right after scanning an item</summary>
+      <p class="muted">Tags the most recently scanned item. Uses Alt+digit (not a bare number) so it never collides with barcode content typed into the scanner input above.</p>
+      <div id="hotkey-list"></div>
+      <button id="hotkey-add-btn" class="btn btn--small">+ Add mapping</button>
+      <div id="hotkey-last-scanned" class="muted"></div>
+    </details>
+
+    <div class="recent-scans">
+      <h3>Recent scans</h3>
+      <ul id="recent-scans-list"></ul>
+    </div>
+  </section>
+
+  <section class="panel" id="table-panel">
+    <h2>4. Records</h2>
+    <div class="table-controls">
+      <input type="text" id="search-input" placeholder="Search SN, product, description..." />
+      <select id="filter-select">
+        <option value="all">All</option>
+        <option value="remaining">Remaining</option>
+        <option value="found">Found</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table id="data-table">
+        <thead>
+          <tr>
+            <th>SN</th>
+            <th>Product</th>
+            <th>Tipe</th>
+            <th>Lantai/Box</th>
+            <th>Company</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Found At</th>
+            <th>Condition</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="data-table-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel hidden" id="intake-panel">
+    <h2>New Products (Intake)</h2>
+    <div id="intake-count" class="muted">0 products added</div>
+    <div class="table-wrap">
+      <table id="intake-table">
+        <thead>
+          <tr>
+            <th>SN</th>
+            <th>Product</th>
+            <th>Tipe</th>
+            <th>Lantai</th>
+            <th>Box</th>
+            <th>Company</th>
+            <th>Description</th>
+            <th>Scanned At</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="intake-table-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" id="unrecognized-panel">
+    <h2>Unrecognized scans</h2>
+    <button id="unrecognized-clear-btn" class="btn btn--small">Clear</button>
+    <div class="table-wrap">
+      <table id="unrecognized-table">
+        <thead>
+          <tr>
+            <th>Scanned Text</th>
+            <th>Format</th>
+            <th>Source</th>
+            <th>Scanned At</th>
+            <th>Product</th>
+            <th>Tipe</th>
+            <th>Company</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody id="unrecognized-table-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" id="footer-panel">
+    <button id="export-btn" class="btn btn--primary" disabled>Export Results</button>
+    <button id="reset-progress-btn" class="btn btn--danger" disabled>Reset Progress (this client)</button>
+    <span id="export-status" class="muted"></span>
+  </section>
+</main>
+
+<script src="vendor/xlsx/xlsx.full.min.js"></script>
+<script src="vendor/zxing/zxing.min.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
